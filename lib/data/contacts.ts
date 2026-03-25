@@ -1,0 +1,208 @@
+export type ContactStatus = "Active" | "Inactive"
+export type SubscriptionStatus = "active" | "expired" | "cancelled"
+
+export interface Subscription {
+  status: SubscriptionStatus
+  starts_at: string   // "YYYY-MM-DD"
+  ends_at: string     // "YYYY-MM-DD"
+  late_renewal_fee_applied: boolean
+}
+
+export interface Contact {
+  id: number
+  name: string
+  company: string
+  role: string
+  email: string
+  phone: string
+  status: ContactStatus
+  city: string
+  address: string
+  bookings: number
+  lastBooking: string
+  notes: string
+  subscription: Subscription
+}
+
+export const CONTACTS: Contact[] = [
+  {
+    id: 1,
+    name: "Markus Steinmann",
+    company: "Engel & Völkers Zürich",
+    role: "Senior Agent",
+    email: "m.steinmann@ev-zürich.ch",
+    phone: "+41 44 201 10 20",
+    status: "Active",
+    city: "Zürich",
+    address: "Bahnhofstrasse 48, 8001 Zürich",
+    bookings: 24,
+    lastBooking: "14 Mar 2026",
+    notes: "Preferred contact via email. Specialises in luxury residential properties.",
+    subscription: { status: "active", starts_at: "2025-10-01", ends_at: "2026-04-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 2,
+    name: "Sandra Hofer",
+    company: "Hofer Immobilien AG",
+    role: "Geschäftsführerin",
+    email: "sandra@hofer-immo.ch",
+    phone: "+41 44 380 55 00",
+    status: "Active",
+    city: "Zürich",
+    address: "Seefeldstrasse 12, 8008 Zürich",
+    bookings: 18,
+    lastBooking: "10 Mar 2026",
+    notes: "Requires photos delivered within 24h. Invoice to company.",
+    subscription: { status: "active", starts_at: "2026-01-01", ends_at: "2026-07-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 3,
+    name: "Luca Ferretti",
+    company: "Sotheby's Int. Realty",
+    role: "Agent",
+    email: "l.ferretti@sothebys.ch",
+    phone: "+41 43 399 90 00",
+    status: "Active",
+    city: "Zug",
+    address: "Baarerstrasse 8, 6300 Zug",
+    bookings: 11,
+    lastBooking: "7 Mar 2026",
+    notes: "Always books Matterport + Photos together.",
+    subscription: { status: "active", starts_at: "2025-10-15", ends_at: "2026-04-15", late_renewal_fee_applied: false },
+  },
+  {
+    id: 4,
+    name: "Anna Brunner",
+    company: "Wüest Partner AG",
+    role: "Beraterin",
+    email: "a.brunner@wuestpartner.ch",
+    phone: "+41 44 289 90 00",
+    status: "Active",
+    city: "Zürich",
+    address: "Gotthardstrasse 6, 8002 Zürich",
+    bookings: 31,
+    lastBooking: "18 Mar 2026",
+    notes: "Top client. Monthly framework contract in place.",
+    subscription: { status: "active", starts_at: "2026-02-01", ends_at: "2026-08-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 5,
+    name: "Thomas Keller",
+    company: "RE/MAX Immobilien Winterthur",
+    role: "Franchise Owner",
+    email: "tkeller@remax-wt.ch",
+    phone: "+41 52 203 11 22",
+    status: "Active",
+    city: "Winterthur",
+    address: "Marktgasse 31, 8400 Winterthur",
+    bookings: 9,
+    lastBooking: "2 Mar 2026",
+    notes: "",
+    subscription: { status: "active", starts_at: "2025-09-15", ends_at: "2026-04-08", late_renewal_fee_applied: false },
+  },
+  {
+    id: 6,
+    name: "Claudia Meier",
+    company: "Claudia Meier",
+    role: "",
+    email: "claudia.meier@gmail.com",
+    phone: "+41 79 456 78 90",
+    status: "Active",
+    city: "Zürich",
+    address: "Rotbuchstrasse 22, 8037 Zürich",
+    bookings: 2,
+    lastBooking: "20 Feb 2026",
+    notes: "Private sale of apartment. One-off client.",
+    subscription: { status: "active", starts_at: "2026-03-01", ends_at: "2026-09-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 7,
+    name: "Beat Zimmermann",
+    company: "Zürcher Kantonalbank",
+    role: "Immobilienberater",
+    email: "b.zimmermann@zkb.ch",
+    phone: "+41 44 292 20 00",
+    status: "Active",
+    city: "Zürich",
+    address: "Bahnhofstrasse 9, 8001 Zürich",
+    bookings: 7,
+    lastBooking: "5 Mar 2026",
+    notes: "ZKB procurement process — always needs formal offer first.",
+    subscription: { status: "active", starts_at: "2025-12-01", ends_at: "2026-06-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 8,
+    name: "Priya Nair",
+    company: "Swiss Life Immo",
+    role: "Asset Manager",
+    email: "p.nair@swisslife-immo.ch",
+    phone: "+41 43 284 65 00",
+    status: "Active",
+    city: "Zürich",
+    address: "General-Guisan-Quai 40, 8022 Zürich",
+    bookings: 15,
+    lastBooking: "12 Mar 2026",
+    notes: "Large portfolio — books in batches of 3–5 properties.",
+    subscription: { status: "active", starts_at: "2025-11-01", ends_at: "2026-05-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 9,
+    name: "Dominik Wirth",
+    company: "Dominik Wirth",
+    role: "",
+    email: "dominik.wirth@bluewin.ch",
+    phone: "+41 76 333 44 55",
+    status: "Inactive",
+    city: "Baden",
+    address: "Cordierstrasse 7, 5400 Baden",
+    bookings: 1,
+    lastBooking: "10 Jan 2026",
+    notes: "Project completed. No further bookings expected.",
+    subscription: { status: "expired", starts_at: "2025-07-01", ends_at: "2026-01-01", late_renewal_fee_applied: false },
+  },
+  {
+    id: 10,
+    name: "Franziska Lehmann",
+    company: "JLL Schweiz AG",
+    role: "Director",
+    email: "f.lehmann@jll.ch",
+    phone: "+41 44 215 75 00",
+    status: "Active",
+    city: "Zürich",
+    address: "Bleicherweg 5, 8001 Zürich",
+    bookings: 22,
+    lastBooking: "17 Mar 2026",
+    notes: "Commercial properties only. Needs floor-plan overlays.",
+    subscription: { status: "active", starts_at: "2025-10-15", ends_at: "2026-04-15", late_renewal_fee_applied: false },
+  },
+  {
+    id: 11,
+    name: "Rafael Moser",
+    company: "Engel & Völkers Zug",
+    role: "Agent",
+    email: "r.moser@ev-zug.ch",
+    phone: "+41 41 726 70 40",
+    status: "Inactive",
+    city: "Zug",
+    address: "Alpenstrasse 11, 6300 Zug",
+    bookings: 4,
+    lastBooking: "15 Dec 2025",
+    notes: "On extended leave until Q3 2026.",
+    subscription: { status: "expired", starts_at: "2025-06-15", ends_at: "2025-12-15", late_renewal_fee_applied: true },
+  },
+  {
+    id: 12,
+    name: "Beatrice Schmid",
+    company: "Kuoni Müller + Partner",
+    role: "Maklerin",
+    email: "b.schmid@kmp.ch",
+    phone: "+41 44 387 77 00",
+    status: "Active",
+    city: "Zürich",
+    address: "Scheuchzerstrasse 2, 8006 Zürich",
+    bookings: 13,
+    lastBooking: "9 Mar 2026",
+    notes: "",
+    subscription: { status: "active", starts_at: "2026-02-01", ends_at: "2026-08-01", late_renewal_fee_applied: false },
+  },
+]
