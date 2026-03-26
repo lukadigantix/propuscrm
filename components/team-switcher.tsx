@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 
 import {
   DropdownMenu,
@@ -46,8 +47,8 @@ export function TeamSwitcher({
               />
             }
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              {activeTeam.logo}
+            <div className="flex aspect-square size-8 items-center justify-center rounded-full bg-sidebar-primary overflow-hidden">
+              <Image src="/logo-small.png" alt="Propus CRM" width={32} height={32} className="object-contain w-full h-full" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{activeTeam.name}</span>

@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ContactInfo } from "../types";
+import type { ContactInfo } from "@/app/booking/types";
 
 interface ContactStepProps {
   values: ContactInfo;
@@ -14,6 +14,7 @@ export function ContactStep({ values, onChange }: ContactStepProps) {
         <h2 className="text-xl font-bold text-zinc-900">Your details</h2>
         <p className="text-sm text-zinc-500 mt-1">We&apos;ll use this to send your booking confirmation.</p>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="firstName">First name</Label>

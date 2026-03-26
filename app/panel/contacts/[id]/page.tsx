@@ -86,10 +86,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const isExpired  = sub ? (sub.status === "expired" || sub.status === "cancelled" || days <= 0) : false
   const isExpiring = sub ? (!isExpired && days <= 30) : false
   const scheme = isExpired
-    ? { card: "bg-red-50 border-red-200", label: "text-red-400", heading: "text-red-800", muted: "text-red-700/50", value: "text-red-900", divider: "border-red-200", btn: "border-red-300 text-red-700 hover:bg-red-50" }
+    ? { accent: "border-l-4 border-l-red-500", label: "text-red-500", heading: "text-red-500", muted: "text-muted-foreground", value: "text-foreground", divider: "border-border", btn: "border-red-500/40 text-red-500 hover:bg-red-500/10" }
     : isExpiring
-    ? { card: "bg-amber-50 border-amber-200", label: "text-amber-500", heading: "text-amber-800", muted: "text-amber-700/60", value: "text-amber-900", divider: "border-amber-200", btn: "border-amber-300 text-amber-700 hover:bg-amber-50" }
-    : { card: "bg-emerald-50 border-emerald-200", label: "text-emerald-600", heading: "text-emerald-800", muted: "text-emerald-700/60", value: "text-emerald-900", divider: "border-emerald-200", btn: "border-emerald-300 text-emerald-700 hover:bg-emerald-50" }
+    ? { accent: "border-l-4 border-l-amber-500", label: "text-amber-500", heading: "text-amber-500", muted: "text-muted-foreground", value: "text-foreground", divider: "border-border", btn: "border-amber-500/40 text-amber-500 hover:bg-amber-500/10" }
+    : { accent: "border-l-4 border-l-emerald-500", label: "text-emerald-500", heading: "text-emerald-500", muted: "text-muted-foreground", value: "text-foreground", divider: "border-border", btn: "border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10" }
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -118,6 +118,48 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {/* Left column */}
         <div className="md:col-span-1 flex flex-col gap-4">
+          {/* Subscription */}
+          {!sub ? (
+            <div className="rounded-xl border bg-card p-5">
+              <h2 className="text-sm font-medium mb-2">Subscription</h2>
+              <p className="text-sm text-muted-foreground">No active subscription.</p>
+            </div>
+          ) : (
+            <div className={`rounded-xl border bg-card p-5 ${scheme.accent}`}>
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-widest mb-1.5 ${scheme.label}`}>Subscription</p>
+                  <p className={`text-2xl font-bold leading-none ${scheme.heading}`}>
+                    {isExpired ? "Expired" : isExpiring ? (days <= 0 ? "Expires today" : `${days} days left`) : "Active"}
+                  </p>
+                  {!isExpired && !isExpiring && (
+                    <p className={`text-sm mt-1 ${scheme.muted}`}>{days} days remaining</p>
+                  )}
+                </div>
+                <Button variant="outline" size="sm" className={`h-7 px-2.5 text-xs bg-card/70 hover:bg-card ${scheme.btn}`}>
+                  <RefreshCcw className="size-3 mr-1" /> Renew
+                </Button>
+              </div>
+              <div className={`flex flex-col gap-2.5 border-t pt-4 ${scheme.divider}`}>
+                <div className="flex justify-between text-sm">
+                  <span className={scheme.muted}>Service</span>
+                  <span className={`font-medium capitalize ${scheme.value}`}>{sub.service}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={scheme.muted}>Started</span>
+                  <span className={scheme.value}>{fmt(sub.starts_at)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={scheme.muted}>{isExpired ? "Expired on" : "Expires on"}</span>
+                  <span className={`font-medium ${isExpired ? "text-red-600" : isExpiring ? "text-amber-700" : scheme.value}`}>{fmt(sub.ends_at)}</span>
+                </div>
+                {sub.is_free && (
+                  <p className={`text-xs pt-3 mt-1 border-t ${scheme.divider} ${scheme.muted}`}>Free subscription (first Matterport booking)</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Contact details */}
           <div className="rounded-xl border bg-card p-5">
             <h2 className="text-sm font-medium mb-4">Contact Info</h2>
@@ -167,48 +209,6 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               </div>
             </div>
           </div>
-
-          {/* Subscription */}
-          {!sub ? (
-            <div className="rounded-xl border bg-card p-5">
-              <h2 className="text-sm font-medium mb-2">Subscription</h2>
-              <p className="text-sm text-muted-foreground">No active subscription.</p>
-            </div>
-          ) : (
-            <div className={`rounded-xl border p-5 ${scheme.card}`}>
-              <div className="flex items-start justify-between gap-4 mb-5">
-                <div>
-                  <p className={`text-xs font-semibold uppercase tracking-widest mb-1.5 ${scheme.label}`}>Subscription</p>
-                  <p className={`text-2xl font-bold leading-none ${scheme.heading}`}>
-                    {isExpired ? "Expired" : isExpiring ? (days <= 0 ? "Expires today" : `${days} days left`) : "Active"}
-                  </p>
-                  {!isExpired && !isExpiring && (
-                    <p className={`text-sm mt-1 ${scheme.muted}`}>{days} days remaining</p>
-                  )}
-                </div>
-                <Button variant="outline" size="sm" className={`h-7 px-2.5 text-xs bg-card/70 hover:bg-card ${scheme.btn}`}>
-                  <RefreshCcw className="size-3 mr-1" /> Renew
-                </Button>
-              </div>
-              <div className={`flex flex-col gap-2.5 border-t pt-4 ${scheme.divider}`}>
-                <div className="flex justify-between text-sm">
-                  <span className={scheme.muted}>Service</span>
-                  <span className={`font-medium capitalize ${scheme.value}`}>{sub.service}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className={scheme.muted}>Started</span>
-                  <span className={scheme.value}>{fmt(sub.starts_at)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className={scheme.muted}>{isExpired ? "Expired on" : "Expires on"}</span>
-                  <span className={`font-medium ${isExpired ? "text-red-600" : isExpiring ? "text-amber-700" : scheme.value}`}>{fmt(sub.ends_at)}</span>
-                </div>
-                {sub.is_free && (
-                  <p className={`text-xs pt-3 mt-1 border-t ${scheme.divider} ${scheme.muted}`}>Free subscription (first Matterport booking)</p>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right column: booking history */}
@@ -322,10 +322,10 @@ function SampleContactPage({ id }: { id: number }) {
   const isExpired  = sub.status === "expired" || sub.status === "cancelled"
   const isExpiring = !isExpired && days <= 30
   const scheme = isExpired
-    ? { card: "bg-red-50 border-red-200", label: "text-red-400", heading: "text-red-800", muted: "text-red-700/50", value: "text-red-900", divider: "border-red-200", btn: "border-red-300 text-red-700 hover:bg-red-50" }
+    ? { accent: "border-l-4 border-l-red-500", label: "text-red-500", heading: "text-red-500", muted: "text-muted-foreground", value: "text-foreground", divider: "border-border", btn: "border-red-500/40 text-red-500 hover:bg-red-500/10" }
     : isExpiring
-    ? { card: "bg-amber-50 border-amber-200", label: "text-amber-500", heading: "text-amber-800", muted: "text-amber-700/60", value: "text-amber-900", divider: "border-amber-200", btn: "border-amber-300 text-amber-700 hover:bg-amber-50" }
-    : { card: "bg-emerald-50 border-emerald-200", label: "text-emerald-600", heading: "text-emerald-800", muted: "text-emerald-700/60", value: "text-emerald-900", divider: "border-emerald-200", btn: "border-emerald-300 text-emerald-700 hover:bg-emerald-50" }
+    ? { accent: "border-l-4 border-l-amber-500", label: "text-amber-500", heading: "text-amber-500", muted: "text-muted-foreground", value: "text-foreground", divider: "border-border", btn: "border-amber-500/40 text-amber-500 hover:bg-amber-500/10" }
+    : { accent: "border-l-4 border-l-emerald-500", label: "text-emerald-500", heading: "text-emerald-500", muted: "text-muted-foreground", value: "text-foreground", divider: "border-border", btn: "border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10" }
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -399,7 +399,7 @@ function SampleContactPage({ id }: { id: number }) {
           </div>
 
           {/* Subscription */}
-          <div className={`rounded-xl border p-5 ${scheme.card}`}>
+          <div className={`rounded-xl border bg-card p-5 ${scheme.accent}`}>
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <p className={`text-xs font-semibold uppercase tracking-widest mb-1.5 ${scheme.label}`}>Subscription</p>

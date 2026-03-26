@@ -1,18 +1,11 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import {
-  ArrowLeft,
-  Mail,
-  Phone,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  Building2,
-  CalendarDays,
-  Users,
+  ArrowLeft, Mail, Phone, AlertTriangle, CheckCircle2, XCircle,
+  CalendarDays, Users, Globe, MapPin, ExternalLink,
 } from "lucide-react"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { slugify } from "@/lib/utils"
+import { EditCompanySheet } from "./EditCompanySheet"
 
 function initials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -47,47 +40,24 @@ function SubBadge({ ends_at, status }: { ends_at: string; status: string }) {
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ company: string }> }) {
-  const { company: slug } = await params
+  const { company: id } = await params
   const admin = createAdminClient()
 
-  // Resolve slug → real company name from DB
-  const { data: distinctRows } = await admin
-    .from("contacts")
-    .select("company")
-    .not("company", "is", null)
-    .neq("company", "")
+  const [{ data: company }, { data: members }] = await Promise.all([
+    admin.from("companies").select("*").eq("id", id).single(),
+    admin.from("contacts").select("id, full_name, email, phone").eq("company_id", id),
+  ])
 
-  const companyName = [...new Set((distinctRows ?? []).map((r) => r.company as string))].find(
-    (name) => slugify(name) === slug
-  )
-
-  if (!companyName) notFound()
-
-  // Fetch members
-  const { data: members } = await admin
-    .from("contacts")
-    .select("id, full_name, email, phone")
-    .eq("company", companyName)
-
+  if (!company) notFound()
   if (!members || members.length === 0) notFound()
 
   const memberIds = members.map((m) => m.id)
 
-  // Fetch bookings + subscriptions in parallel
   const [{ data: bookingRows }, { data: subsRows }] = await Promise.all([
-    admin
-      .from("bookings")
-      .select("contact_id, date")
-      .in("contact_id", memberIds)
-      .order("date", { ascending: false }),
-    admin
-      .from("subscriptions")
-      .select("contact_id, status, ends_at")
-      .in("contact_id", memberIds)
-      .order("ends_at", { ascending: false }),
+    admin.from("bookings").select("contact_id, date").in("contact_id", memberIds).order("date", { ascending: false }),
+    admin.from("subscriptions").select("contact_id, status, ends_at").in("contact_id", memberIds).order("ends_at", { ascending: false }),
   ])
 
-  // Build lookup maps
   const bookingsPerContact = new Map<string, { count: number; lastDate: string | null }>()
   for (const b of bookingRows ?? []) {
     const existing = bookingsPerContact.get(b.contact_id)
@@ -106,30 +76,104 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   }
 
   const totalBookings = [...bookingsPerContact.values()].reduce((sum, v) => sum + v.count, 0)
+  const domains: string[] = company.domains ?? []
+  const locations: string[] = company.locations ?? []
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">
-        <Link
-          href="/panel/companies"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-card px-6 py-4">
+        <Link href="/panel/companies" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="size-4" />
           Companies
         </Link>
+        <EditCompanySheet company={{
+          id: company.id,
+          name: company.name,
+          description: company.description ?? null,
+          phone: company.phone ?? null,
+          email: company.email ?? null,
+          website: company.website ?? null,
+          domains: company.domains ?? [],
+          locations: company.locations ?? [],
+        }} />
       </header>
 
-      <div className="p-6 flex flex-col gap-6 max-w-5xl">
-        {/* Company hero */}
+      <div className="p-6 flex flex-col gap-6">
+        {/* Company card */}
         <div className="rounded-xl border bg-card overflow-hidden">
-          <div className="px-6 py-6 flex items-center gap-5 border-b">
-            <div className="size-16 rounded-xl bg-muted flex items-center justify-center text-xl font-bold text-zinc-700 shrink-0">
-              {initials(companyName)}
+          {/* Header */}
+          <div className="px-6 py-6 flex items-start gap-5 border-b">
+            <div className="size-16 rounded-xl bg-muted flex items-center justify-center text-xl font-bold text-foreground shrink-0">
+              {initials(company.name)}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-semibold">{companyName}</h1>
+              <h1 className="text-xl font-semibold">{company.name}</h1>
+              {company.description && (
+                <p className="text-sm text-muted-foreground mt-1">{company.description}</p>
+              )}
             </div>
           </div>
+
+          {/* Details grid */}
+          {(company.email || company.phone || company.website || locations.length > 0 || domains.length > 0) && (
+            <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 border-b">
+              {company.email && (
+                <div className="flex items-center gap-3">
+                  <Mail className="size-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Email</p>
+                    <p className="text-sm">{company.email}</p>
+                  </div>
+                </div>
+              )}
+              {company.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="size-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Phone</p>
+                    <p className="text-sm">{company.phone}</p>
+                  </div>
+                </div>
+              )}
+              {company.website && (
+                <div className="flex items-center gap-3">
+                  <ExternalLink className="size-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Website</p>
+                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-sm hover:underline truncate block">
+                      {company.website}
+                    </a>
+                  </div>
+                </div>
+              )}
+              {locations.length > 0 && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="size-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Locations</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {locations.map((l) => (
+                        <span key={l} className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">{l}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {domains.length > 0 && (
+                <div className="flex items-start gap-3">
+                  <Globe className="size-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Domains</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {domains.map((d) => (
+                        <span key={d} className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">{d}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stats row */}
           <div className="grid grid-cols-2 divide-x">
@@ -160,12 +204,12 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               return (
                 <Link
                   key={member.id}
-                  href={`/panel/companies/${slug}/${member.id}`}
+                  href={`/panel/companies/${id}/${member.id}`}
                   className="group rounded-xl border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-5 flex flex-col gap-4"
                 >
                   {/* Card header */}
                   <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-zinc-700 shrink-0">
+                    <div className="size-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-foreground shrink-0">
                       {initials(member.full_name)}
                     </div>
                     <div className="flex-1 min-w-0">

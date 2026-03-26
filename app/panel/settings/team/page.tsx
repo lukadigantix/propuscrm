@@ -3,7 +3,6 @@ import { ContactAvatar } from "@/components/contact-avatar"
 import { Phone, Box, Camera } from "lucide-react"
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
 import { AddMemberSheet } from "./AddMemberSheet"
 
 type Role = "super_admin" | "admin" | "user"
@@ -16,23 +15,19 @@ const ROLE_LABEL: Record<Role, string> = {
 
 const ROLE_STYLE: Record<Role, string> = {
   super_admin: "bg-primary text-primary-foreground",
-  admin: "bg-muted text-zinc-700",
+  admin: "bg-muted text-muted-foreground",
   user: "bg-blue-50 text-blue-700",
 }
 
 export default async function TeamPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const currentUserId = session?.user?.id
-
   const admin = createAdminClient()
   const { data: members } = await admin
     .from("profiles")
-    .select("id, full_name, phone, role, specializations, created_at")
-    .eq("role", "admin")
+    .select("id, full_name, phone, role, specializations, created_at, avatar_url")
+    .in("role", ["super_admin", "admin"])
     .order("created_at", { ascending: true })
 
-  const list = (members ?? []).filter((m) => m.id !== currentUserId)
+  const list = members ?? []
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +49,7 @@ export default async function TeamPage() {
             {list.map((member) => (
               <div key={member.id} className="flex items-center gap-4 px-6 py-4">
                 <Link href={`/panel/settings/team/${member.id}`} className="flex items-center gap-4 flex-1 min-w-0 group">
-                  <ContactAvatar name={member.full_name ?? "?"} size="lg" />
+                  <ContactAvatar name={member.full_name ?? "?"} avatarUrl={member.avatar_url ?? null} size="lg" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

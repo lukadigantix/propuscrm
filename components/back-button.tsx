@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 
-export default function BackButton({ label }: { label: string }) {
+export default function BackButton({ label = "Back" }: { label?: string }) {
   const router = useRouter()
   return (
     <button

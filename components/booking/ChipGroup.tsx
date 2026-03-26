@@ -18,7 +18,7 @@ export function ChipGroup<T extends string>({ options, value, onChange }: ChipGr
             className={cn(
               "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all",
               active
-                ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-400"
+                ? "border-zinc-900 bg-zinc-50 text-zinc-900 ring-1 ring-zinc-400"
                 : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
             )}
           >

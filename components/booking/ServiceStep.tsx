@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Service } from "../types";
-import { SERVICES } from "../data";
+import type { Service } from "@/app/booking/types";
+import { SERVICES } from "@/app/booking/data";
 
 interface ServiceStepProps {
   selected: Service | null;
@@ -28,7 +28,7 @@ export function ServiceStep({ selected, onSelect }: ServiceStepProps) {
               onClick={() => onSelect(svc.id)}
               className={cn(
                 "w-full text-left rounded-2xl border-2 p-4 flex items-center gap-4 transition-all",
-                isSelected ? "border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+                isSelected ? "border-zinc-900 bg-zinc-50 shadow-md shadow-zinc-100" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
               )}
             >
               <div className={cn(
@@ -41,7 +41,7 @@ export function ServiceStep({ selected, onSelect }: ServiceStepProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-zinc-900">{svc.label}</span>
                   {"badge" in svc && svc.badge && (
-                    <Badge className="text-[10px] bg-indigo-100 text-indigo-700 border-0 px-2 py-0">{svc.badge}</Badge>
+                    <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0 px-2 py-0">{svc.badge}</Badge>
                   )}
                 </div>
                 <p className="text-sm text-zinc-500 mt-0.5">{svc.description}</p>
@@ -49,7 +49,7 @@ export function ServiceStep({ selected, onSelect }: ServiceStepProps) {
               </div>
               <div className={cn(
                 "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
-                isSelected ? "border-indigo-500 bg-indigo-500" : "border-zinc-300"
+                isSelected ? "border-zinc-900 bg-zinc-900" : "border-zinc-300"
               )}>
                 {isSelected && <Check className="w-3 h-3 text-white" />}
               </div>

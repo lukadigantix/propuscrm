@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   Avatar,
   AvatarFallback,
@@ -20,9 +21,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon, SunIcon, MoonIcon } from "lucide-react"
+import { ChevronsUpDownIcon, LogOutIcon, SunIcon, MoonIcon, UserPenIcon } from "lucide-react"
 import { logout } from "@/app/login/actions"
 import { useTheme } from "next-themes"
+import { EditProfileModal } from "@/components/EditProfileModal"
+
 
 export function NavUser({
   user,
@@ -31,11 +34,22 @@ export function NavUser({
     name: string
     email: string
     avatar: string
+    phone?: string
   }
 }) {
   const { isMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
+  const [profileOpen, setProfileOpen] = React.useState(false)
+  const [openCount, setOpenCount] = React.useState(0)
+
+  const handleProfileOpenChange = (open: boolean) => {
+    if (open) setOpenCount((c) => c + 1)
+    setProfileOpen(open)
+  }
+
   return (
+    <>
+    <EditProfileModal openCount={openCount} open={profileOpen} onOpenChange={handleProfileOpenChange} user={user} />
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
@@ -46,7 +60,7 @@ export function NavUser({
           >
             <Avatar>
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarFallback>{user.name.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>
@@ -65,7 +79,7 @@ export function NavUser({
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar>
                     <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>CN</AvatarFallback>
+                    <AvatarFallback>{user.name.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
@@ -106,6 +120,13 @@ export function NavUser({
             <DropdownMenuSeparator />
             */}
             <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => handleProfileOpenChange(true)}>
+                <UserPenIcon />
+                Edit Profile
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
               <DropdownMenuItem closeOnClick={false} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
@@ -133,5 +154,6 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+    </>
   )
 }

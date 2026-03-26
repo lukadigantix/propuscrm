@@ -3,8 +3,8 @@ import { Bed, Car, Sofa } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { PropertyDetails } from "../types";
-import { PROPERTY_TYPES, ROOM_OPTIONS, PARKING_OPTIONS, FURNISHED_OPTIONS } from "../data";
+import type { PropertyDetails } from "@/app/booking/types";
+import { PROPERTY_TYPES, ROOM_OPTIONS, PARKING_OPTIONS, FURNISHED_OPTIONS } from "@/app/booking/data";
 import { ChipGroup } from "./ChipGroup";
 
 interface PropertyDetailsFormProps {
@@ -29,7 +29,7 @@ export function PropertyDetailsForm({ details, onChange }: PropertyDetailsFormPr
               className={cn(
                 "flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-all",
                 details.type === id
-                  ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-400"
+                  ? "border-zinc-900 bg-zinc-50 text-zinc-900 ring-1 ring-zinc-400"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
               )}
             >
@@ -106,7 +106,7 @@ export function PropertyDetailsForm({ details, onChange }: PropertyDetailsFormPr
         <textarea id="access" rows={3}
           placeholder="e.g. Intercom code: 12#45 · Key at reception · Ring bell on arrival"
           value={details.accessNotes} onChange={(e) => set("accessNotes", e.target.value)}
-          className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
         />
       </div>
     </div>

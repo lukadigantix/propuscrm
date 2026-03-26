@@ -1,7 +1,7 @@
 import { Separator } from "@/components/ui/separator";
-import type { SelectedAddress, PropertyDetails, Service, TeamMember, ContactInfo } from "../types";
-import { SERVICES, PROPERTY_TYPES, PARKING_OPTIONS, FURNISHED_OPTIONS } from "../data";
-import { serviceDuration, toMin, formatMins } from "../helpers";
+import type { SelectedAddress, PropertyDetails, Service, TeamMember, ContactInfo } from "@/app/booking/types";
+import { SERVICES, PROPERTY_TYPES, PARKING_OPTIONS, FURNISHED_OPTIONS } from "@/app/booking/data";
+import { serviceDuration, toMin, formatMins } from "@/app/booking/helpers";
 
 interface SummaryStepProps {
   address: SelectedAddress | null;

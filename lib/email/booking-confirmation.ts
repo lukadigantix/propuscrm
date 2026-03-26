@@ -16,6 +16,7 @@ interface BookingConfirmationParams {
   time: string        // "10:00"
   address: string
   panelLink: string   // invite or magic link
+  isNewUser: boolean  // true = first booking → set-password CTA; false = returning client → no CTA
 }
 
 export async function sendBookingConfirmation({
@@ -26,6 +27,7 @@ export async function sendBookingConfirmation({
   time,
   address,
   panelLink,
+  isNewUser,
 }: BookingConfirmationParams) {
   const serviceLabel = SERVICE_LABELS[service] ?? service
   const formattedDate = new Date(`${date}T${time}:00`).toLocaleDateString("de-CH", {
@@ -114,6 +116,7 @@ export async function sendBookingConfirmation({
           <!-- CTA block -->
           <tr>
             <td style="padding:40px 40px 32px;">
+              ${isNewUser ? `
               <p style="margin:0 0 24px 0;font-size:14px;color:#555555;line-height:1.7;">
                 Track the progress of your booking in your personal client panel.
                 Click below to set up your access — it takes less than a minute.
@@ -125,6 +128,12 @@ export async function sendBookingConfirmation({
                 This link is valid for 24 hours. After that, sign in at
                 <a href="${appUrl}/login" style="color:#555555;text-decoration:underline;">${appUrl}/login</a>
               </p>
+              ` : `
+              <p style="margin:0;font-size:14px;color:#555555;line-height:1.7;">
+                You can track your booking at any time by signing in to your client panel at
+                <a href="${appUrl}/login" style="color:#111111;text-decoration:underline;">${appUrl}/login</a>.
+              </p>
+              `}
             </td>
           </tr>
 

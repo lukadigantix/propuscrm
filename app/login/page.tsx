@@ -1,4 +1,4 @@
-import { Camera } from "lucide-react";
+import Image from "next/image";
 import { login } from "./actions";
 import LoginForm from "./LoginForm";
 
@@ -13,8 +13,8 @@ export default function LoginPage({
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600 mb-4 shadow-lg shadow-indigo-200">
-            <Camera className="w-5 h-5 text-white" />
+          <div className="flex justify-center mb-4">
+            <Image src="/logo-dark.png" alt="Propus CRM" width={160} height={60} className="object-contain h-14 w-auto" />
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Propus CRM</h1>
           <p className="text-sm text-zinc-500 mt-1">Sign in to your account</p>

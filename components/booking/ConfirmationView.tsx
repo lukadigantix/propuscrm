@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import type { TeamMember, SelectedAddress, Service } from "../types";
-import { SERVICES } from "../data";
-import { serviceDuration, toMin, formatMins } from "../helpers";
+import type { TeamMember, SelectedAddress, Service } from "@/app/booking/types";
+import { SERVICES } from "@/app/booking/data";
+import { serviceDuration, toMin, formatMins } from "@/app/booking/helpers";
 
 interface ConfirmationViewProps {
   contact: { email: string };

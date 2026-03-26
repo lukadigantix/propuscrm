@@ -11,12 +11,20 @@ const SPEC_LABEL: Record<string, { label: string; icon: React.ReactNode }> = {
   photos:     { label: "Photos",     icon: <Camera className="w-3.5 h-3.5" /> },
 }
 
+const STATUS_COLOR: Record<string, string> = {
+  Scheduled:     "bg-amber-100 text-amber-800",
+  "In Progress": "bg-purple-100 text-purple-800",
+  Delivered:     "bg-green-100 text-green-800",
+  Invoiced:      "bg-blue-100 text-blue-800",
+  Cancelled:     "bg-red-100 text-red-800",
+}
+
 export default async function TeamMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const admin = createAdminClient()
 
   const [{ data: member }, { data: authUser }] = await Promise.all([
-    admin.from("profiles").select("id, full_name, phone, role, specializations, created_at").eq("id", id).single(),
+    admin.from("profiles").select("id, full_name, phone, role, specializations, created_at, avatar_url").eq("id", id).single(),
     admin.auth.admin.getUserById(id),
   ])
 
@@ -24,6 +32,13 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
 
   const email = authUser?.user?.email ?? null
   const specs: string[] = member.specializations ?? []
+
+  const { data: assignedBookings } = await admin
+    .from("bookings")
+    .select("id, date, time, property_address, status, service")
+    .eq("assigned_team_member", member.full_name ?? "")
+    .order("date", { ascending: false })
+    .limit(20)
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,7 +57,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
 
         {/* Header card */}
         <div className="rounded-xl border bg-card p-6 flex items-center gap-5">
-          <ContactAvatar name={member.full_name ?? "?"} size="lg" />
+          <ContactAvatar name={member.full_name ?? "?"} avatarUrl={member.avatar_url ?? null} size="lg" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-semibold text-foreground">{member.full_name || "—"}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -116,17 +131,43 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
 
           </div>
 
-          {/* Right column — bookings placeholder */}
+          {/* Right column — bookings */}
           <div className="md:col-span-2">
             <div className="rounded-xl border bg-card overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b">
                 <h2 className="text-sm font-medium text-foreground">Assigned Bookings</h2>
-                <span className="text-xs text-muted-foreground">Coming soon</span>
+                <span className="text-xs text-muted-foreground">{assignedBookings?.length ?? 0} total</span>
               </div>
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
-                <CalendarDays className="w-7 h-7 opacity-30" />
-                <p className="text-sm">No bookings assigned yet.</p>
-              </div>
+              {!assignedBookings || assignedBookings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+                  <CalendarDays className="w-7 h-7 opacity-30" />
+                  <p className="text-sm">No bookings assigned yet.</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {assignedBookings.map((b) => (
+                    <Link
+                      key={b.id}
+                      href={`/panel/bookings/${b.id}`}
+                      className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/40 transition gap-4"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{b.property_address ?? "—"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(b.date).toLocaleDateString("en-CH", { day: "numeric", month: "short", year: "numeric" })}
+                            {b.time ? ` · ${b.time.slice(0, 5)}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLOR[b.status] ?? "bg-muted text-zinc-700"}`}>
+                        {b.status}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

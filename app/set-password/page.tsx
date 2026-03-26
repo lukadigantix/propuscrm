@@ -1,17 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, Eye, EyeOff } from "lucide-react";
+import { Camera, Loader2, Eye, EyeOff, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SetPasswordPage() {
   const router = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+
+  // Load email from URL param (passed by auth/callback after token exchange),
+  // then load name from the session's user metadata.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get("email");
+    if (emailParam) setEmail(decodeURIComponent(emailParam));
+
+    console.log("[SET-PASSWORD] URL search:", window.location.search);
+    console.log("[SET-PASSWORD] URL hash:", window.location.hash);
+    console.log("[SET-PASSWORD] All params:", Object.fromEntries(params.entries()));
+    console.log("[SET-PASSWORD] email param:", emailParam);
+
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      console.log("[SET-PASSWORD] getUser result:", {
+        id: user?.id,
+        email: user?.email,
+        metadata: user?.user_metadata,
+        aud: user?.aud,
+      });
+      if (!user) return;
+      if (!emailParam) setEmail(user.email ?? null);
+      const fullName = user.user_metadata?.full_name as string | undefined;
+      setName(fullName ?? null);
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,8 +77,10 @@ export default function SetPasswordPage() {
           <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600 mb-4 shadow-lg shadow-indigo-200">
             <Camera className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Set your password</h1>
-          <p className="text-sm text-zinc-500 mt-1">Choose a password to access your panel</p>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+            {name ? `Welcome, ${name.split(" ")[0]}` : "Welcome"}
+          </h1>
+          <p className="text-sm text-zinc-500 mt-1">Set a password to access your panel anytime</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -58,6 +89,17 @@ export default function SetPasswordPage() {
             {error && (
               <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
                 <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            {/* Email — read only, shows who's registering */}
+            {email && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-700">Your email</label>
+                <div className="h-11 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
+                  <span className="text-sm text-zinc-500 truncate">{email}</span>
+                </div>
               </div>
             )}
 
@@ -73,6 +115,7 @@ export default function SetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoFocus
                   autoComplete="new-password"
                   placeholder="Min. 8 characters"
                   className="w-full h-11 rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
@@ -113,7 +156,7 @@ export default function SetPasswordPage() {
               {isPending ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
               ) : (
-                "Save & go to my panel"
+                "Save & go to my panel →"
               )}
             </button>
 

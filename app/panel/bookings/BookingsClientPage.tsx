@@ -72,7 +72,7 @@ function fmtDate(dateStr: string) {
   }
 }
 
-export default function BookingsClientPage({ dbBookings }: { dbBookings: DbBooking[] }) {
+export default function BookingsClientPage({ dbBookings, isClient = false }: { dbBookings: DbBooking[]; isClient?: boolean }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [tab, setTab]       = useState<BookingStatus | "All">("All")
@@ -106,7 +106,7 @@ export default function BookingsClientPage({ dbBookings }: { dbBookings: DbBooki
           <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
           <h1 className="text-lg font-semibold text-foreground">Bookings</h1>
         </div>
-        <HeaderActionButton label="New booking" />
+        <HeaderActionButton label="New booking" onClick={() => router.push("/booking")} />
       </header>
 
       <div className="space-y-6 p-6">

@@ -17,6 +17,7 @@ import {
   ParkingCircle,
   Sofa,
   StickyNote,
+  ArrowRight,
 } from "lucide-react"
 
 const STATUS_COLOR: Record<string, string> = {
@@ -205,6 +206,49 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             {booking.contact_id && (
               <Link href={`/panel/contacts/${booking.contact_id}`} className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-3 h-8 text-sm font-medium hover:bg-muted transition-colors shrink-0">
                 View contact
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Deliverables */}
+      {(booking.service === "photos" || booking.service === "matterport" || booking.service === "both") && (
+        <div className="rounded-xl border bg-card p-6">
+          <h2 className="text-sm font-medium mb-4">Deliverables</h2>
+          <div className="flex flex-col gap-3">
+            {(booking.service === "photos" || booking.service === "both") && (
+              <Link
+                href={`/panel/photos/${booking.id}`}
+                className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 hover:bg-muted/60 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-8 items-center justify-center rounded-md bg-violet-500/10 text-violet-500">
+                    <Camera className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Photo Job</p>
+                    <p className="text-xs text-muted-foreground">View gallery and delivery status</p>
+                  </div>
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground" />
+              </Link>
+            )}
+            {(booking.service === "matterport" || booking.service === "both") && (
+              <Link
+                href={`/panel/matterport/tours/${booking.id}`}
+                className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 hover:bg-muted/60 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-8 items-center justify-center rounded-md bg-blue-500/10 text-blue-500">
+                    <Box className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Matterport Tour</p>
+                    <p className="text-xs text-muted-foreground">View 3D tour and link status</p>
+                  </div>
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground" />
               </Link>
             )}
           </div>

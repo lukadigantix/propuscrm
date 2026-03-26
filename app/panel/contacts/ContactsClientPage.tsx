@@ -4,9 +4,8 @@ import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Search, Phone, Mail, Users, AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
+import { Search, Users, AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
 import { HeaderActionButton } from "@/components/header-action-button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -18,25 +17,20 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination"
-import { CONTACTS, type ContactStatus, type SubscriptionStatus } from "@/lib/data/contacts"
+
 
 export type DbContact = {
   id: string
   full_name: string
   email: string | null
   phone: string | null
-  company: string | null
+  company_id: string | null
+  company_name: string | null
   created_at: string
   booking_count: number
   last_booking_date: string | null
   matterport_sub_ends_at: string | null
 }
-
-const STATUS_FILTERS: { label: string; value: ContactStatus | "All" }[] = [
-  { label: "All",      value: "All"      },
-  { label: "Active",   value: "Active"   },
-  { label: "Inactive", value: "Inactive" },
-]
 
 type SubBucket = "active" | "expiring" | "expired"
 const SUB_FILTERS: { label: string; value: SubBucket | "All" }[] = [
@@ -51,31 +45,11 @@ function daysLeft(ends_at: string): number {
   return Math.round((new Date(ends_at).getTime() - today.getTime()) / 86_400_000)
 }
 
-function getBucket(ends_at: string, status: SubscriptionStatus): SubBucket {
-  if (status === "expired" || status === "cancelled") return "expired"
-  return daysLeft(ends_at) <= 30 ? "expiring" : "active"
-}
-
-function SubscriptionBadge({ ends_at, status }: { ends_at: string; status: SubscriptionStatus }) {
-  const bucket = getBucket(ends_at, status)
-  const days   = daysLeft(ends_at)
-  if (bucket === "expired")
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
-        <XCircle className="size-3" />Expired
-      </span>
-    )
-  if (bucket === "expiring")
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
-        <AlertTriangle className="size-3" />{days}d left
-      </span>
-    )
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-      <CheckCircle2 className="size-3" />{days}d left
-    </span>
-  )
+function getDbBucket(matterport_sub_ends_at: string | null): SubBucket {
+  if (!matterport_sub_ends_at) return "expired"
+  const days = daysLeft(matterport_sub_ends_at)
+  if (days <= 0) return "expired"
+  return days <= 30 ? "expiring" : "active"
 }
 
 function DbSubscriptionBadge({ ends_at }: { ends_at: string }) {
@@ -99,46 +73,42 @@ function DbSubscriptionBadge({ ends_at }: { ends_at: string }) {
   )
 }
 
+function relativeDate(dateStr: string): string {
+  const diff = Math.round((Date.now() - new Date(dateStr).getTime()) / 86_400_000)
+  if (diff === 0) return "Today"
+  if (diff === 1) return "Yesterday"
+  if (diff < 30) return `${diff}d ago`
+  if (diff < 365) return `${Math.round(diff / 30)}mo ago`
+  return `${Math.round(diff / 365)}yr ago`
+}
+
 function initials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
 }
 
 export default function ContactsClientPage({ dbContacts }: { dbContacts: DbContact[] }) {
   const router = useRouter()
-  const [search, setSearch]             = useState("")
-  const [statusFilter, setStatusFilter] = useState<ContactStatus | "All">("All")
-  const [subFilter, setSubFilter]       = useState<SubBucket | "All">("All")
-  const [page, setPage]                 = useState(1)
+  const [search, setSearch]       = useState("")
+  const [subFilter, setSubFilter] = useState<SubBucket | "All">("All")
+  const [page, setPage]           = useState(1)
   const PAGE_SIZE = 10
 
   const filteredDb = useMemo(() => {
     const q = search.toLowerCase()
-    if (!q) return dbContacts
-    return dbContacts.filter((c) =>
-      c.full_name.toLowerCase().includes(q) ||
-      (c.company ?? "").toLowerCase().includes(q) ||
-      (c.email ?? "").toLowerCase().includes(q)
-    )
-  }, [search, dbContacts])
-
-  const filteredSample = useMemo(() => {
-    return CONTACTS.filter((c) => {
-      const q = search.toLowerCase()
-      const matchSearch =
-        !q ||
-        c.name.toLowerCase().includes(q) ||
-        c.company.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.city.toLowerCase().includes(q)
-      const matchStatus = statusFilter === "All" || c.status === statusFilter
-      const matchSub    = subFilter    === "All" || getBucket(c.subscription.ends_at, c.subscription.status) === subFilter
-      return matchSearch && matchStatus && matchSub
+    return dbContacts.filter((c) => {
+      if (q &&
+        !c.full_name.toLowerCase().includes(q) &&
+        !(c.company_name ?? "").toLowerCase().includes(q) &&
+        !(c.email ?? "").toLowerCase().includes(q)
+      ) return false
+      if (subFilter !== "All" && getDbBucket(c.matterport_sub_ends_at) !== subFilter) return false
+      return true
     })
-  }, [search, statusFilter, subFilter])
+  }, [search, subFilter, dbContacts])
 
-  const totalPages = Math.max(1, Math.ceil(filteredSample.length / PAGE_SIZE))
-  const paginated  = filteredSample.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const totalCount = filteredDb.length + filteredSample.length
+  const totalPages = Math.max(1, Math.ceil(filteredDb.length / PAGE_SIZE))
+  const paginated  = filteredDb.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalCount = filteredDb.length
 
   return (
     <div className="min-h-screen bg-background">
@@ -180,22 +150,6 @@ export default function ContactsClientPage({ dbContacts }: { dbContacts: DbConta
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Status</span>
-              <div className="flex gap-1 rounded-lg border p-1">
-                {STATUS_FILTERS.map((f) => (
-                  <Button
-                    key={f.value}
-                    variant={statusFilter === f.value ? "default" : "ghost"}
-                    size="sm"
-                    className="h-7 px-3 text-xs"
-                    onClick={() => { setStatusFilter(f.value); setPage(1) }}
-                  >
-                    {f.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -208,100 +162,90 @@ export default function ContactsClientPage({ dbContacts }: { dbContacts: DbConta
             </div>
           ) : (
             <div className="divide-y">
+              {/* Header row */}
+              <div className="flex items-center gap-5 px-5 py-2.5 bg-muted/30">
+                <div className="size-8 shrink-0" />
+                <div className="w-44 shrink-0">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Name</span>
+                </div>
+                <div className="w-36 shrink-0 hidden sm:block">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company</span>
+                </div>
+                <div className="flex-1 min-w-0 hidden md:block">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Email</span>
+                </div>
+                <div className="w-36 shrink-0 hidden lg:block">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone</span>
+                </div>
+                <div className="w-28 shrink-0 hidden md:block">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Subscription</span>
+                </div>
+                <div className="w-28 shrink-0 hidden lg:block text-right">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Last booking</span>
+                </div>
+                <div className="w-24 shrink-0 hidden xl:block text-right">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Bookings</span>
+                </div>
+              </div>
 
-              {/* DB contacts first */}
-              {filteredDb.map((contact) => (
+              {paginated.map((contact) => (
                 <div
-                  key={`db-${contact.id}`}
+                  key={contact.id}
                   onClick={() => router.push(`/panel/contacts/${contact.id}`)}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-muted/40 transition-colors cursor-pointer"
+                  className="flex items-center gap-5 px-5 py-3.5 hover:bg-muted/40 transition-colors cursor-pointer"
                 >
-                  <Avatar className="size-10 shrink-0">
-                    <AvatarFallback className="text-sm font-medium">
+                  {/* Avatar */}
+                  <Avatar className="size-8 shrink-0">
+                    <AvatarFallback className="text-xs font-semibold">
                       {initials(contact.full_name)}
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">{contact.full_name}</span>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {contact.company ?? "—"}
-                    </p>
+                  {/* Name */}
+                  <div className="w-44 shrink-0">
+                    <span className="text-sm font-semibold text-foreground">{contact.full_name}</span>
                   </div>
 
-                  <div className="hidden sm:flex items-center shrink-0">
-                    {contact.matterport_sub_ends_at && (
-                      <DbSubscriptionBadge ends_at={contact.matterport_sub_ends_at} />
-                    )}
+                  {/* Company */}
+                  <div className="w-36 shrink-0 hidden sm:block">
+                    {contact.company_name
+                      ? <span className="inline-block rounded-full bg-muted px-3 py-0.5 text-xs font-semibold text-foreground truncate max-w-full">{contact.company_name}</span>
+                      : <span className="text-sm text-muted-foreground">—</span>
+                    }
                   </div>
 
-                  <div className="hidden md:flex flex-col items-end gap-1 shrink-0 text-xs text-muted-foreground">
-                    {contact.email && (
-                      <span className="flex items-center gap-1.5">
-                        <Mail className="size-3" />{contact.email}
-                      </span>
-                    )}
-                    {contact.phone && (
-                      <span className="flex items-center gap-1.5">
-                        <Phone className="size-3" />{contact.phone}
-                      </span>
-                    )}
+                  {/* Email */}
+                  <div className="flex-1 min-w-0 hidden md:block">
+                    <span className="text-sm text-muted-foreground truncate block">{contact.email ?? "—"}</span>
                   </div>
 
-                  <div className="hidden lg:flex flex-col items-end gap-1 shrink-0 text-xs text-muted-foreground ml-4">
-                    <span className="font-medium text-foreground">{contact.booking_count} bookings</span>
-                    {contact.last_booking_date && (
-                      <span>Last: {new Date(contact.last_booking_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {/* Sample contacts below */}
-              {paginated.map((contact) => (
-                <div
-                  key={`sample-${contact.id}`}
-                  onClick={() => router.push(`/panel/contacts/${contact.id}`)}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-muted/40 transition-colors cursor-pointer"
-                >
-                  <Avatar className="size-10 shrink-0">
-                    <AvatarFallback className="text-sm font-medium">
-                      {initials(contact.name)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm">{contact.name}</span>
-                      {contact.status === "Inactive" && (
-                        <Badge variant="outline" className="text-xs text-muted-foreground">Inactive</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {contact.role ? `${contact.role} · ` : ""}{contact.company} · {contact.city}
-                    </p>
+                  {/* Phone */}
+                  <div className="w-36 shrink-0 hidden lg:block">
+                    <span className="text-sm text-muted-foreground">{contact.phone ?? "—"}</span>
                   </div>
 
-                  <div className="hidden sm:flex items-center shrink-0">
-                    <SubscriptionBadge ends_at={contact.subscription.ends_at} status={contact.subscription.status} />
+                  {/* Sub badge */}
+                  <div className="w-28 shrink-0 hidden md:flex">
+                    {contact.matterport_sub_ends_at
+                      ? <DbSubscriptionBadge ends_at={contact.matterport_sub_ends_at} />
+                      : <span className="text-xs text-muted-foreground">—</span>
+                    }
                   </div>
 
-                  <div className="hidden md:flex flex-col items-end gap-1 shrink-0 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Mail className="size-3" />{contact.email}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Phone className="size-3" />{contact.phone}
+                  {/* Last booking */}
+                  <div className="w-28 shrink-0 hidden lg:block text-right">
+                    <span className="text-sm text-muted-foreground">
+                      {contact.last_booking_date ? relativeDate(contact.last_booking_date) : "—"}
                     </span>
                   </div>
 
-                  <div className="hidden lg:flex flex-col items-end gap-1 shrink-0 text-xs text-muted-foreground ml-4">
-                    <span className="font-medium text-foreground">{contact.bookings} bookings</span>
-                    <span>Last: {contact.lastBooking}</span>
+                  {/* Bookings count */}
+                  <div className="w-24 shrink-0 hidden xl:block text-right">
+                    <span className="text-sm font-semibold text-foreground">{contact.booking_count}</span>
+                    <span className="text-xs text-muted-foreground ml-1">{contact.booking_count === 1 ? "booking" : "bookings"}</span>
                   </div>
                 </div>
               ))}
-
             </div>
           )}
         </div>
@@ -309,7 +253,7 @@ export default function ContactsClientPage({ dbContacts }: { dbContacts: DbConta
         {/* Footer */}
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            {filteredDb.length > 0 && `${filteredDb.length} real · `}{filteredSample.length} sample
+            {totalCount} contact{totalCount !== 1 ? "s" : ""}
           </p>
           {totalPages > 1 && (
             <Pagination className="w-auto mx-0">

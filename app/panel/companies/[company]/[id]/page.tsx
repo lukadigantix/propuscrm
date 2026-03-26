@@ -244,7 +244,7 @@ export default async function CompanyContactDetailPage({
             ) : (
               <div className="divide-y">
                 {bookings.slice(0, 10).map((b) => (
-                  <div key={b.id} className="px-5 py-4 hover:bg-muted/40 transition-colors cursor-pointer">
+                  <Link key={b.id} href={`/panel/bookings/${b.id}`} className="block px-5 py-4 hover:bg-muted/40 transition-colors">
                     <div className="flex items-stretch justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -280,7 +280,7 @@ export default async function CompanyContactDetailPage({
                         <span className="text-xs text-muted-foreground">{fmt(b.date)}</span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -480,7 +480,7 @@ function SampleContactPage({
             ) : (
               <div className="divide-y">
                 {history.map((b) => (
-                  <div key={b.id} className="px-5 py-4 hover:bg-muted/40 transition-colors cursor-pointer">
+                  <div key={b.id} className="px-5 py-4 hover:bg-muted/40 transition-colors cursor-pointer"> {/* sample data — no real route */}
                     <div className="flex items-stretch justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">

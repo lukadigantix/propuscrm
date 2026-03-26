@@ -1,6 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Paths blocked for the `user` (client) role
+const USER_BLOCKED_PREFIXES = [
+  "/panel/contacts",
+  "/panel/companies",
+  "/panel/photos",
+  "/panel/matterport",
+  "/panel/settings",
+  "/panel/subscriptions",
+]
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -25,14 +35,44 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  const path = request.nextUrl.pathname;
+
+  // Step 1: session check (cheap — reads cookie only, no network call)
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session && request.nextUrl.pathname.startsWith("/panel")) {
+  if (!session && path.startsWith("/panel")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (session && request.nextUrl.pathname === "/login") {
+  if (session && path === "/login") {
     return NextResponse.redirect(new URL("/panel", request.url));
+  }
+
+  // Step 2: role check — only when path is potentially blocked
+  // Role is embedded in the JWT (app_metadata) via DB trigger → zero DB calls
+  if (session && path.startsWith("/panel")) {
+    const isBlocked = USER_BLOCKED_PREFIXES.some((p) => path.startsWith(p));
+    if (isBlocked) {
+      // Read role from JWT app_metadata (no network/DB call)
+      const role = session.user.app_metadata?.role as string | undefined;
+
+      if (role === "user") {
+        return NextResponse.redirect(new URL("/panel/bookings", request.url));
+      }
+
+      // Fallback: role not yet in JWT (migration not applied) → DB lookup
+      if (!role) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profile?.role === "user") {
+          return NextResponse.redirect(new URL("/panel/bookings", request.url));
+        }
+      }
+    }
   }
 
   return supabaseResponse;

@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronLeft, Camera, Loader2, ArrowRight } from "lucide-react";
-import type { SelectedAddress, PropertyDetails, Service, TeamMemberId, ContactInfo } from "./types";
-import { TEAM_MEMBERS, STEPS } from "./data";
+import { Check, ChevronLeft, Loader2, ArrowRight } from "lucide-react";
+import type { SelectedAddress, PropertyDetails, Service, TeamMemberId, TeamMember, ContactInfo } from "./types";
+import { STEPS } from "./data";
 import { dateKey } from "./helpers";
-import { StepIndicator } from "./components/StepIndicator";
-import { AddressStep } from "./components/AddressStep";
-import { ServiceStep } from "./components/ServiceStep";
-import { TeamMemberStep } from "./components/TeamMemberStep";
-import { DateStep } from "./components/DateStep";
-import { ContactStep } from "./components/ContactStep";
-import { SummaryStep } from "./components/SummaryStep";
-import { ConfirmationView } from "./components/ConfirmationView";
+import { StepIndicator } from "@/components/booking/StepIndicator";
+import { AddressStep } from "@/components/booking/AddressStep";
+import { ServiceStep } from "@/components/booking/ServiceStep";
+import { TeamMemberStep } from "@/components/booking/TeamMemberStep";
+import { DateStep } from "@/components/booking/DateStep";
+import { ContactStep } from "@/components/booking/ContactStep";
+import { SummaryStep } from "@/components/booking/SummaryStep";
+import { ConfirmationView } from "@/components/booking/ConfirmationView";
 
 export default function BookingPage() {
   const [step, setStep] = useState(1);
@@ -26,6 +27,7 @@ export default function BookingPage() {
   });
   const [service, setService] = useState<Service | null>(null);
   const [teamMemberId, setTeamMemberId] = useState<TeamMemberId | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
   const [contact, setContact] = useState<ContactInfo>({
@@ -34,8 +36,19 @@ export default function BookingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  const selectedMember  = TEAM_MEMBERS.find((m) => m.id === teamMemberId);
-  const recommendedId: TeamMemberId = TEAM_MEMBERS.find((m) => m.primarySkill === service)?.id ?? 1;
+  // Fetch team members from DB
+  useEffect(() => {
+    fetch("/api/team-members")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setTeamMembers(data) })
+      .catch(() => {});
+  }, []);
+
+  const selectedMember  = teamMembers.find((m) => m.id === teamMemberId);
+  const recommendedId: TeamMemberId | null = teamMembers.find((m) => m.primarySkill === service)?.id
+    ?? teamMembers.find((m) => m.primarySkill === "both")?.id
+    ?? teamMembers[0]?.id
+    ?? null;
 
   // Reset downstream selections when team member changes
   const handleSelectTeamMember = (id: TeamMemberId) => {
@@ -110,8 +123,8 @@ export default function BookingPage() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600 mb-4 shadow-lg shadow-indigo-200">
-            <Camera className="w-5 h-5 text-white" />
+          <div className="flex justify-center mb-4">
+            <Image src="/logo-dark.png" alt="Propus CRM" width={140} height={52} className="object-contain h-12 w-auto" />
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Book a visit</h1>
           <p className="text-sm text-zinc-500 mt-1.5">Professional real estate photography in Zürich</p>
@@ -151,6 +164,7 @@ export default function BookingPage() {
                         <TeamMemberStep
                           selected={teamMemberId}
                           recommendedId={recommendedId}
+                          members={teamMembers}
                           onSelect={handleSelectTeamMember}
                         />
                       )}
@@ -161,6 +175,7 @@ export default function BookingPage() {
                           onSelectDate={handleSelectDate}
                           onSelectTime={setSelectedTime}
                           memberId={teamMemberId}
+                          memberName={selectedMember?.name}
                           service={service}
                           bookingLat={address?.lat}
                           bookingLon={address?.lon}
@@ -202,7 +217,7 @@ export default function BookingPage() {
                   {step < 6 ? (
                     <Button
                       onClick={() => goTo(step + 1)} disabled={!canProceed()}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 px-5 rounded-xl shadow-md shadow-indigo-200"
+                      className="bg-zinc-900 hover:bg-zinc-800 text-white gap-2 px-5 rounded-xl shadow-md shadow-zinc-200"
                     >
                       Continue <ArrowRight className="w-4 h-4" />
                     </Button>
@@ -210,7 +225,7 @@ export default function BookingPage() {
                     <Button
                       onClick={handleConfirm}
                       disabled={isSubmitting}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 px-5 rounded-xl shadow-md shadow-indigo-200 disabled:opacity-70"
+                      className="bg-zinc-900 hover:bg-zinc-800 text-white gap-2 px-5 rounded-xl shadow-md shadow-zinc-200 disabled:opacity-70"
                     >
                       {isSubmitting ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Booking...</>

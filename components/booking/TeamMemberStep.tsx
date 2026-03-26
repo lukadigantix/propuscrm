@@ -3,16 +3,16 @@ import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import type { TeamMemberId } from "../types";
-import { TEAM_MEMBERS } from "../data";
+import type { TeamMemberId, TeamMember } from "@/app/booking/types";
 
 interface TeamMemberStepProps {
   selected: TeamMemberId | null;
-  recommendedId: TeamMemberId;
+  recommendedId: TeamMemberId | null;
+  members: TeamMember[];
   onSelect: (id: TeamMemberId) => void;
 }
 
-export function TeamMemberStep({ selected, recommendedId, onSelect }: TeamMemberStepProps) {
+export function TeamMemberStep({ selected, recommendedId, members, onSelect }: TeamMemberStepProps) {
   return (
     <div className="space-y-5">
       <div>
@@ -20,7 +20,7 @@ export function TeamMemberStep({ selected, recommendedId, onSelect }: TeamMember
         <p className="text-sm text-zinc-500 mt-1">We&apos;ve highlighted the best match for your service.</p>
       </div>
       <div className="grid gap-3">
-        {TEAM_MEMBERS.map((member, i) => {
+        {members.map((member, i) => {
           const isSelected = selected === member.id;
           const isRecommended = member.id === recommendedId;
           return (
@@ -30,7 +30,7 @@ export function TeamMemberStep({ selected, recommendedId, onSelect }: TeamMember
               onClick={() => onSelect(member.id)}
               className={cn(
                 "w-full text-left rounded-2xl border-2 p-4 flex items-center gap-4 transition-all",
-                isSelected ? "border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+                isSelected ? "border-zinc-900 bg-zinc-50 shadow-md shadow-zinc-100" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
               )}
             >
               <Avatar className="w-11 h-11 shrink-0">
@@ -50,7 +50,7 @@ export function TeamMemberStep({ selected, recommendedId, onSelect }: TeamMember
               </div>
               <div className={cn(
                 "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
-                isSelected ? "border-indigo-500 bg-indigo-500" : "border-zinc-300"
+                isSelected ? "border-zinc-900 bg-zinc-900" : "border-zinc-300"
               )}>
                 {isSelected && <Check className="w-3 h-3 text-white" />}
               </div>

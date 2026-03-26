@@ -1,5 +1,5 @@
 export type Service = "photos" | "matterport" | "both";
-export type TeamMemberId = 1 | 2 | 3;
+export type TeamMemberId = string;
 export type PropertyType = "house" | "apartment" | "commercial" | "other" | null;
 
 export interface TeamMember {

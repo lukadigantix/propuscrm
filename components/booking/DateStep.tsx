@@ -5,9 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Clock, Loader2, AlertTriangle, Navigation } from "lucide-react";
 import { BookingCalendar } from "@/components/booking-calendar";
 import { cn } from "@/lib/utils";
-import type { Service, TeamMemberId, BusySlot, TravelBuffer } from "../types";
-import { TEAM_MEMBERS } from "../data";
-import { dateKey, toMin, formatMins, serviceDuration, isDayAvailable } from "../helpers";
+import type { Service, TeamMemberId, BusySlot, TravelBuffer } from "@/app/booking/types";
+import { dateKey, toMin, formatMins, serviceDuration, isDayAvailable } from "@/app/booking/helpers";
 
 interface DayAvail {
   slots: string[];
@@ -27,6 +26,7 @@ interface DateStepProps {
   onSelectDate: (d: Date | undefined) => void;
   onSelectTime: (t: string) => void;
   memberId: TeamMemberId | null;
+  memberName?: string;
   service: Service | null;
   bookingLat?: number;
   bookingLon?: number;
@@ -34,9 +34,8 @@ interface DateStepProps {
 
 export function DateStep({
   selectedDate, selectedTime, onSelectDate, onSelectTime,
-  memberId, service, bookingLat, bookingLon,
+  memberId, memberName = "your specialist", service, bookingLat, bookingLon,
 }: DateStepProps) {
-  const memberName = TEAM_MEMBERS.find((m) => m.id === memberId)?.name ?? "your specialist";
   const duration = serviceDuration(service);
   const durationH = duration / 60;
 
@@ -221,8 +220,8 @@ export function DateStep({
                       className={cn(
                         "px-3.5 py-2 rounded-xl text-sm font-semibold border-2 transition-all",
                         selectedTime === time
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200"
-                          : "bg-white text-zinc-700 border-zinc-200 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
+                          ? "bg-zinc-900 text-white border-zinc-900 shadow-md shadow-zinc-200"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
                       )}
                     >
                       {time}
@@ -241,18 +240,18 @@ export function DateStep({
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-start gap-3 rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-3"
+            className="flex items-start gap-3 rounded-xl bg-zinc-50 border border-zinc-200 px-4 py-3"
           >
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-lg bg-zinc-900 flex items-center justify-center shrink-0 mt-0.5">
               <Check className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-indigo-800">
+              <p className="text-sm font-semibold text-zinc-900">
                 {selectedDate.toLocaleDateString("en-CH", { weekday: "long", month: "long", day: "numeric" })}
                 {" at "}
                 {selectedTime}
               </p>
-              <p className="text-xs text-indigo-500 mt-0.5">
+              <p className="text-xs text-zinc-500 mt-0.5">
                 {durationH}h shoot &mdash; ends at {endTime}
               </p>
             </div>

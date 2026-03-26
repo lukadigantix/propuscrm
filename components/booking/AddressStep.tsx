@@ -7,12 +7,12 @@ import { MapPin, Loader2, AlertTriangle, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import type { SelectedAddress, AddressSuggestion, PropertyDetails } from "../types";
-import { ZURICH, MAX_RADIUS_KM } from "../data";
-import { haversineKm, stripHtml } from "../helpers";
+import type { SelectedAddress, AddressSuggestion, PropertyDetails } from "@/app/booking/types";
+import { ZURICH, MAX_RADIUS_KM } from "@/app/booking/data";
+import { haversineKm, stripHtml } from "@/app/booking/helpers";
 import { PropertyDetailsForm } from "./PropertyDetailsForm";
 
-const MapPicker = dynamic(() => import("../MapPicker"), {
+const MapPicker = dynamic(() => import("@/app/booking/MapPicker"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-70 rounded-xl bg-zinc-100 flex items-center justify-center">
@@ -130,7 +130,7 @@ export function AddressStep({ selected, onSelect, propertyDetails, onPropertyDet
               <button key={i} type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSearchSelect(s)}
-                className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 flex items-start gap-3 border-b border-zinc-100 last:border-0 transition-colors"
+                className="w-full text-left px-4 py-2.5 hover:bg-zinc-50 flex items-start gap-3 border-b border-zinc-100 last:border-0 transition-colors"
               >
                 <MapPin className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" />
                 <span className="text-sm text-zinc-800" dangerouslySetInnerHTML={{ __html: s.label }} />
@@ -144,11 +144,11 @@ export function AddressStep({ selected, onSelect, propertyDetails, onPropertyDet
         {selected?.label && (
           <motion.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-3"
+            className="flex items-center gap-3 rounded-xl bg-zinc-50 border border-zinc-200 px-4 py-3"
           >
-            <MapPin className="w-4 h-4 text-indigo-500 shrink-0" />
-            <span className="text-sm text-indigo-800 font-medium flex-1">{selected.label}</span>
-            <span className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+            <MapPin className="w-4 h-4 text-zinc-500 shrink-0" />
+            <span className="text-sm text-zinc-900 font-medium flex-1">{selected.label}</span>
+            <span className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center shrink-0">
               <Check className="w-3 h-3 text-white" />
             </span>
           </motion.div>

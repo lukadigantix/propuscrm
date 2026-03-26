@@ -73,8 +73,8 @@ const PERMISSIONS = [
 
 function Cell({ value }: { value: boolean }) {
   return value
-    ? <Check className="size-4 text-green-600 mx-auto" />
-    : <X className="size-4 text-muted-foreground/60 mx-auto" />
+    ? <Check className="size-4 text-emerald-500 mx-auto" />
+    : <X className="size-4 text-muted-foreground mx-auto" />
 }
 
 export default function RolesPage() {
@@ -110,7 +110,7 @@ export default function RolesPage() {
                   </tr>
                   {section.rows.map((row) => (
                     <tr key={row.label} className="border-b last:border-0 hover:bg-background transition-colors">
-                      <td className="px-6 py-3 text-zinc-700">{row.label}</td>
+                      <td className="px-6 py-3 text-foreground">{row.label}</td>
                       <td className="px-6 py-3 text-center"><Cell value={row.super_admin} /></td>
                       <td className="px-6 py-3 text-center"><Cell value={row.admin} /></td>
                       <td className="px-6 py-3 text-center"><Cell value={row.client} /></td>

@@ -253,55 +253,65 @@ export async function POST(req: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
       console.log("📧 [STEP 6] Generating auth link for:", clientEmail)
 
-      // Try invite (new user → must set password first).
-      // Fall back to magic link if user already exists.
+      // Check if auth user already exists with this email
+      const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
+      const existingAuthUser = existingAuthUsers?.users?.find((u) => u.email === clientEmail) ?? null
+
       let panelLink: string | null = null
-      const { data: inviteData, error: inviteError } =
-        await supabaseAdmin.auth.admin.generateLink({
-          type: "invite",
-          email: clientEmail,
-          options: {
-            redirectTo: `${appUrl}/auth/callback?next=/set-password`,
-            data: { full_name: clientName, phone: clientPhone ?? null },
-          },
-        })
+      let isNewUser = false
 
-      if (!inviteError) {
-        panelLink = inviteData.properties.action_link
-        console.log("✅ [STEP 6] Invite link generated (new user)")
+      if (!existingAuthUser) {
+        console.log("🆕 [STEP 6] User does NOT exist in auth — this is a FIRST booking → sending invite link (set-password flow)")
+        const { data: inviteData, error: inviteError } =
+          await supabaseAdmin.auth.admin.generateLink({
+            type: "invite",
+            email: clientEmail,
+            options: {
+              redirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(`/set-password?email=${encodeURIComponent(clientEmail)}`)}`,
+              data: { full_name: clientName, phone: clientPhone ?? null },
+            },
+          })
 
-        // Upsert profile with name + phone so it's ready when user logs in
-        const newUserId = inviteData.user?.id
-        if (newUserId) {
-          console.log("👤 [STEP 6] Upserting profile for new user:", newUserId)
-          await supabaseAdmin.from("profiles").upsert(
-            { id: newUserId, full_name: clientName, phone: clientPhone ?? null, role: "user" },
-            { onConflict: "id" }
-          )
-          console.log("✅ [STEP 6] Profile upserted:", { userId: newUserId, full_name: clientName, role: "user" })
-          // Also link the auth user back to the contact row
-          if (contactId) {
-            await supabaseAdmin
-              .from("contacts")
-              .update({ auth_user_id: newUserId })
-              .eq("id", contactId)
-            console.log("🔗 [STEP 6] Linked auth_user_id on contact:", { contactId, auth_user_id: newUserId })
+        if (!inviteError && inviteData) {
+          panelLink = inviteData.properties.action_link
+          isNewUser = true
+          console.log("✅ [STEP 6] Invite link generated for new user")
+
+          // Upsert profile with name + phone so it's ready when user logs in
+          const newUserId = inviteData.user?.id
+          if (newUserId) {
+            console.log("👤 [STEP 6] Upserting profile for new user:", newUserId)
+            await supabaseAdmin.from("profiles").upsert(
+              { id: newUserId, full_name: clientName, phone: clientPhone ?? null, role: "user" },
+              { onConflict: "id" }
+            )
+            console.log("✅ [STEP 6] Profile upserted:", { userId: newUserId, full_name: clientName, role: "user" })
+            // Also link the auth user back to the contact row
+            if (contactId) {
+              await supabaseAdmin
+                .from("contacts")
+                .update({ auth_user_id: newUserId })
+                .eq("id", contactId)
+              console.log("🔗 [STEP 6] Linked auth_user_id on contact:", { contactId, auth_user_id: newUserId })
+            }
           }
+        } else {
+          console.log("❌ [STEP 6] Invite link generation failed:", inviteError?.message)
         }
       } else {
-        console.log("ℹ️  [STEP 6] User already registered →", inviteError.message, "→ sending magic link instead")
-        // User already registered — send straight to panel via magic link
+        console.log("🔄 [STEP 6] User ALREADY EXISTS in auth (uid:", existingAuthUser.id, ") — returning client, no invite needed → sending magic link")
+        isNewUser = false
         const { data: magicData } = await supabaseAdmin.auth.admin.generateLink({
           type: "magiclink",
           email: clientEmail,
           options: { redirectTo: `${appUrl}/auth/callback?next=/panel` },
         })
         panelLink = magicData?.properties?.action_link ?? null
-        console.log("✅ [STEP 6] Magic link generated for existing user")
+        console.log("✅ [STEP 6] Magic link generated for existing user (email only, no set-password CTA)")
       }
 
       if (panelLink) {
-        console.log("📨 [STEP 7] Sending booking confirmation email to:", clientEmail)
+        console.log("📨 [STEP 7] Sending booking confirmation email to:", clientEmail, "| isNewUser:", isNewUser)
         await sendBookingConfirmation({
           to: clientEmail,
           clientName,
@@ -310,6 +320,7 @@ export async function POST(req: NextRequest) {
           time,
           address,
           panelLink,
+          isNewUser,
         })
         console.log("✅ [STEP 7] Confirmation email sent")
       } else {

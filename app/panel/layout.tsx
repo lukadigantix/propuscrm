@@ -8,13 +8,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  let profile = { name: "", email: user?.email ?? "", role: "user" }
+  let profile = { name: "", email: user?.email ?? "", role: "user", phone: "", avatar: "" }
+  let clientServices: string[] = []
 
   if (user?.id) {
     const admin = createAdminClient()
     const { data } = await admin
       .from("profiles")
-      .select("full_name, role")
+      .select("full_name, role, phone, avatar_url")
       .eq("id", user.id)
       .single()
     if (data) {
@@ -22,13 +23,38 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         name: data.full_name ?? "",
         email: user.email ?? "",
         role: data.role,
+        phone: data.phone ?? "",
+        avatar: data.avatar_url ?? "",
+      }
+    }
+
+    // For clients: find which services they have booked so we can show the right nav items
+    if (data?.role === "user") {
+      const { data: contact } = await admin
+        .from("contacts")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle()
+
+      if (contact) {
+        const { data: bookings } = await admin
+          .from("bookings")
+          .select("service")
+          .eq("contact_id", contact.id)
+
+        const services = new Set<string>()
+        for (const b of bookings ?? []) {
+          if (b.service === "photos" || b.service === "both") services.add("photos")
+          if (b.service === "matterport" || b.service === "both") services.add("matterport")
+        }
+        clientServices = [...services]
       }
     }
   }
 
   return (
     <SidebarProvider>
-      <AppSidebar user={profile} />
+      <AppSidebar user={profile} clientServices={clientServices} />
       <SidebarInset>
         <PageTransition>
           {children}

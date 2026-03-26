@@ -48,7 +48,7 @@ export default function LoginForm({ action }: { action: LoginAction }) {
             <label htmlFor="password" className="text-sm font-medium text-zinc-700">
               Password
             </label>
-            <a href="#" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+            <a href="#" className="text-xs text-zinc-700 hover:text-zinc-900 font-medium">
               Forgot password?
             </a>
           </div>
@@ -67,7 +67,7 @@ export default function LoginForm({ action }: { action: LoginAction }) {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 text-white text-sm font-semibold shadow-md shadow-indigo-200 transition-colors flex items-center justify-center gap-2"
+          className="w-full h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:opacity-70 text-white text-sm font-semibold shadow-md shadow-zinc-200 transition-colors flex items-center justify-center gap-2"
         >
           {isPending ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
