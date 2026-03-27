@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { UserProvider } from "@/context/UserContext";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -27,7 +29,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-(family-name:--font-montserrat)">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <TooltipProvider>{children}</TooltipProvider>
+          <Providers>
+            <UserProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </UserProvider>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>

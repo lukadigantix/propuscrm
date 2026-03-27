@@ -1,6 +1,8 @@
 "use client"
 
+import { useQuery } from "@tanstack/react-query"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Box, CalendarDays, MapPin, ExternalLink, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DbClientMatterport } from "./page"
@@ -16,7 +18,41 @@ const STATUS_STYLE: Record<string, string> = {
   Invoiced:      "bg-violet-100 text-violet-700",
 }
 
-export default function MyMatterportClientView({ bookings }: { bookings: DbClientMatterport[] }) {
+export default function MyMatterportClientView() {
+  const { data: bookings = [], isLoading } = useQuery<DbClientMatterport[]>({
+    queryKey: ["my-matterport"],
+    queryFn: () => {
+      console.log("[MyMatterportClientView] fetching /api/my-matterport...")
+      return fetch("/api/my-matterport").then((r) => r.json())
+    },
+  })
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">
+          <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+          <Box className="size-4 text-muted-foreground" />
+          <h1 className="text-sm font-medium">My Matterport Tours</h1>
+        </header>
+        <div className="p-6 max-w-2xl mx-auto flex flex-col gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-xl border bg-card overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/20">
+                <Skeleton className="h-4 w-52" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <div className="px-6 py-5 flex flex-col gap-4">
+                <Skeleton className="h-3.5 w-40" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { Pencil, X, Loader2 } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Dialog } from "@base-ui/react/dialog"
 import { updateCompany } from "./actions"
 
@@ -23,6 +24,7 @@ export function EditCompanySheet({ company }: { company: Company }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const queryClient = useQueryClient()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -31,6 +33,8 @@ export function EditCompanySheet({ company }: { company: Company }) {
     startTransition(async () => {
       try {
         await updateCompany(company.id, formData)
+        queryClient.invalidateQueries({ queryKey: ["companies"] })
+        queryClient.invalidateQueries({ queryKey: ["company", company.id] })
         setOpen(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to save")

@@ -3,12 +3,14 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
+import { Skeleton } from "@/components/ui/skeleton"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   Link2, Camera, LayoutDashboard, ChevronRight, MapPin, Building2,
-  CalendarDays, CheckCircle2, AlertCircle, Search, ExternalLink, Box,
+  CalendarDays, Search, ExternalLink, Box,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -86,11 +88,6 @@ const PREVIEW_COUNT = 5
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
 
-function tourDaysLeft(ends_at: string): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  return Math.round((new Date(ends_at).getTime() - today.getTime()) / 86_400_000)
-}
-
 function fmtDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-CH", { day: "numeric", month: "short", year: "numeric" })
 }
@@ -103,20 +100,6 @@ function matchesDate(date: string, filter: DateFilter): boolean {
   if (filter === "Last 30 days") { const ago = new Date(today); ago.setDate(ago.getDate() - 30); return d < today && d >= ago }
   if (filter === "Last 3 months") { const ago = new Date(today); ago.setMonth(ago.getMonth() - 3); return d < today && d >= ago }
   return true
-}
-
-function getTourAboStatus(sub_ends_at: string, sub_status: string): "active" | "expiring" | "archived" {
-  if (sub_status === "expired" || sub_status === "cancelled") return "archived"
-  const days = tourDaysLeft(sub_ends_at)
-  return days <= 30 ? "expiring" : "active"
-}
-
-function AboStatusBadge({ status }: { status: "active" | "expiring" | "archived" }) {
-  if (status === "active")
-    return <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">Active</span>
-  if (status === "expiring")
-    return <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-amber-100 text-amber-700">Expiring</span>
-  return <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-zinc-100 text-zinc-500 uppercase tracking-wide">Archived</span>
 }
 
 function BookingList({
@@ -164,14 +147,19 @@ function BookingList({
   )
 }
 
-export default function MatterportClientPage({
-  bookings,
-  tours,
-}: {
-  bookings: DbMatterportBooking[]
-  tours: DbMatterportTour[]
-}) {
+export default function MatterportClientPage() {
   const router = useRouter()
+
+  const { data, isLoading } = useQuery<{ bookings: DbMatterportBooking[]; tours: DbMatterportTour[] }>({
+    queryKey: ["matterport"],
+    queryFn: () => {
+      console.log("[MatterportClientPage] fetching /api/matterport...")
+      return fetch("/api/matterport").then((r) => r.json())
+    },
+  })
+
+  const bookings = useMemo(() => data?.bookings ?? [], [data])
+
   const [active, setActive]          = useState<Tab>("overview")
   const [search, setSearch]          = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All")
@@ -214,6 +202,32 @@ export default function MatterportClientPage({
   }, [tourSearch, tourFilter, bookings])
 
   function resetPage() { setPage(1) }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">
+          <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+          <h1 className="text-lg font-semibold text-foreground">Matterport</h1>
+        </header>
+        <div className="p-6 space-y-6">
+          <Skeleton className="h-10 w-72" />
+          <div className="rounded-xl border bg-card overflow-hidden divide-y">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <Skeleton className="size-10 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-48" />
+                  <Skeleton className="h-3 w-64" />
+                </div>
+                <Skeleton className="h-6 w-20 hidden sm:block" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -419,7 +433,6 @@ export default function MatterportClientPage({
                   </thead>
                   <tbody className="divide-y">
                     {filteredTourBookings.map((b) => {
-                      const isUpcoming = new Date(b.date) >= TODAY
                       return (
                         <tr
                           key={b.id}

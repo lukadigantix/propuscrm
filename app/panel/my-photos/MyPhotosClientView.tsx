@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Camera, MapPin, CalendarDays, Star, StarOff,
   CheckSquare, MessageSquare, X, ImagePlus,
@@ -218,7 +220,45 @@ function BookingSection({ booking }: { booking: DbClientPhotoBooking }) {
   )
 }
 
-export default function MyPhotosClientView({ bookings }: { bookings: DbClientPhotoBooking[] }) {
+export default function MyPhotosClientView() {
+  const { data: bookings = [], isLoading } = useQuery<DbClientPhotoBooking[]>({
+    queryKey: ["my-photos"],
+    queryFn: () => {
+      console.log("[MyPhotosClientView] fetching /api/my-photos...")
+      return fetch("/api/my-photos").then((r) => r.json())
+    },
+  })
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">
+          <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+          <Camera className="size-4 text-muted-foreground" />
+          <h1 className="text-sm font-medium">My Photos</h1>
+        </header>
+        <div className="p-6 max-w-4xl mx-auto flex flex-col gap-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="rounded-xl border bg-card overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/20">
+                <Skeleton className="h-4 w-52" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <div className="px-6 py-5 flex flex-col gap-4">
+                <Skeleton className="h-3.5 w-40" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, j) => (
+                    <Skeleton key={j} className="w-full aspect-4/3 rounded-xl" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">

@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 import { Building2, Globe, MapPin, Search, ChevronsUpDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { HeaderActionButton } from "@/components/header-action-button"
 import {
@@ -60,11 +62,23 @@ function ColHeader({ label, sortKey, current, onSort }: {
   )
 }
 
-export default function CompaniesClientPage({ companies }: { companies: EnrichedCompany[] }) {
+export default function CompaniesClientPage() {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [sort, setSort] = useState<SortKey>("name")
   const [page, setPage] = useState(1)
+
+  const { data: companies = [], isLoading } = useQuery<EnrichedCompany[]>({
+    queryKey: ["companies"],
+    queryFn: async () => {
+      console.log("[CompaniesClientPage] fetching /api/companies...")
+      const res = await fetch("/api/companies")
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      console.log(`[CompaniesClientPage] loaded ${data.length} companies`)
+      return data
+    },
+  })
 
   function handleSort(k: SortKey) {
     setSort(k)
@@ -105,6 +119,25 @@ export default function CompaniesClientPage({ companies }: { companies: Enriched
       </header>
 
       <div className="flex flex-col gap-4 p-6">
+
+        {/* Skeleton while loading */}
+        {isLoading && (
+          <div className="rounded-xl border overflow-hidden bg-card">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-[2fr_3fr_1.5fr_1.5fr_2fr_auto] items-center gap-3 px-5 py-3.5 border-b last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="size-7 rounded-md shrink-0" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-20 hidden lg:block" />
+                <Skeleton className="h-4 w-20 hidden lg:block" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative w-full sm:max-w-sm">

@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Camera, Box, Video, CalendarDays } from "lucide-react"
 import {
   Pagination,
@@ -20,6 +22,7 @@ import {
 import type { BookingStatus } from "@/lib/data/bookings"
 import { ContactAvatar } from "@/components/contact-avatar"
 import { HeaderActionButton } from "@/components/header-action-button"
+import { useUser } from "@/context/UserContext"
 
 export type DbBooking = {
   id: string
@@ -72,12 +75,28 @@ function fmtDate(dateStr: string) {
   }
 }
 
-export default function BookingsClientPage({ dbBookings, isClient = false }: { dbBookings: DbBooking[]; isClient?: boolean }) {
+export default function BookingsClientPage() {
   const router = useRouter()
+  const { role, contactId } = useUser()
   const [search, setSearch] = useState("")
   const [tab, setTab]       = useState<BookingStatus | "All">("All")
   const [page, setPage]     = useState(1)
   const PAGE_SIZE = 10
+
+  const { data: dbBookings = [], isLoading: loading, isError, error } = useQuery<DbBooking[]>({
+    queryKey: ["bookings"],
+    queryFn: async () => {
+      console.log("[BookingsClientPage] fetching /api/bookings...")
+      const headers: Record<string, string> = {}
+      if (role) headers["x-user-role"] = role
+      if (contactId) headers["x-contact-id"] = contactId
+      const res = await fetch("/api/bookings", { headers })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      console.log(`[BookingsClientPage] loaded ${data.length} bookings`)
+      return data
+    },
+  })
 
   // DB bookings — search + status filter
   const filteredDb = useMemo(() => {
@@ -110,7 +129,38 @@ export default function BookingsClientPage({ dbBookings, isClient = false }: { d
       </header>
 
       <div className="space-y-6 p-6">
-        {/* Search + Filter tabs */}
+
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="overflow-hidden rounded-xl border bg-card divide-y">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <div className="hidden sm:flex flex-col items-center gap-1 w-12 shrink-0">
+                  <Skeleton className="h-3 w-8" />
+                  <Skeleton className="h-7 w-7" />
+                </div>
+                <Skeleton className="size-9 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="hidden md:block h-6 w-24 rounded-md" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error state */}
+        {!loading && isError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+            Failed to load bookings: {(error as Error)?.message}
+          </div>
+        )}
+
+        {/* Content */}
+        {!loading && !isError && (
+        <>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -236,6 +286,8 @@ export default function BookingsClientPage({ dbBookings, isClient = false }: { d
             </Pagination>
           )}
         </div>
+        </>
+        )}
       </div>
     </div>
   )

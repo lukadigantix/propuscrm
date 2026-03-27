@@ -10,7 +10,7 @@ export async function GET() {
   const admin = createAdminClient()
   const { data: contact } = await admin
     .from("contacts")
-    .select("full_name, email, phone, company")
+    .select("id, full_name, email, phone, company")
     .eq("auth_user_id", user.id)
     .maybeSingle()
 
@@ -18,6 +18,7 @@ export async function GET() {
 
   const [firstName, ...rest] = (contact.full_name ?? "").trim().split(" ")
   return NextResponse.json({
+    contactId: contact.id,
     firstName: firstName ?? "",
     lastName:  rest.join(" "),
     email:     contact.email ?? "",

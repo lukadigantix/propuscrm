@@ -1,23 +1,17 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getAuthUser } from "@/lib/supabase/server"
+import { createAdminClient, getProfile } from "@/lib/supabase/admin"
 import PageTransition from "@/components/page-transition"
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
 
   let profile = { name: "", email: user?.email ?? "", role: "user", phone: "", avatar: "" }
   let clientServices: string[] = []
 
   if (user?.id) {
-    const admin = createAdminClient()
-    const { data } = await admin
-      .from("profiles")
-      .select("full_name, role, phone, avatar_url")
-      .eq("id", user.id)
-      .single()
+    const data = await getProfile(user.id)
     if (data) {
       profile = {
         name: data.full_name ?? "",
@@ -30,6 +24,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
     // For clients: find which services they have booked so we can show the right nav items
     if (data?.role === "user") {
+      const admin = createAdminClient()
       const { data: contact } = await admin
         .from("contacts")
         .select("id")

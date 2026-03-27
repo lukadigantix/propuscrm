@@ -37,7 +37,7 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Step 1: session check (cheap — reads cookie only, no network call)
+  // Step 1: session check (reads cookie only, no network call) — used for routing only
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session && path.startsWith("/panel")) {
@@ -49,11 +49,11 @@ export async function proxy(request: NextRequest) {
   }
 
   // Step 2: role check — only when path is potentially blocked
-  // Role is embedded in the JWT (app_metadata) via DB trigger → zero DB calls
+  // Role lives in the signed JWT (app_metadata via DB trigger) — no network call needed.
+  // Middleware is a UX redirect only; real data security is enforced in Server Components.
   if (session && path.startsWith("/panel")) {
     const isBlocked = USER_BLOCKED_PREFIXES.some((p) => path.startsWith(p));
     if (isBlocked) {
-      // Read role from JWT app_metadata (no network/DB call)
       const role = session.user.app_metadata?.role as string | undefined;
 
       if (role === "user") {

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import {
   Pagination, PaginationContent, PaginationItem, PaginationLink,
   PaginationNext, PaginationPrevious, PaginationEllipsis,
 } from "@/components/ui/pagination"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Search, FileText, ChevronRight, Camera, Box, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -134,8 +136,17 @@ function InvoiceRow({ invoice, onClick }: { invoice: DbInvoice; onClick: () => v
   )
 }
 
-export default function InvoicesClientPage({ invoices }: { invoices: DbInvoice[] }) {
+export default function InvoicesClientPage() {
   const router = useRouter()
+
+  const { data: invoices = [], isLoading } = useQuery<DbInvoice[]>({
+    queryKey: ["invoices"],
+    queryFn: () => {
+      console.log("[InvoicesClientPage] fetching /api/invoices...")
+      return fetch("/api/invoices").then((r) => r.json())
+    },
+  })
+
   const [search, setSearch]             = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All")
   const [typeFilter, setTypeFilter]     = useState<TypeFilter>("All")
@@ -168,6 +179,45 @@ export default function InvoicesClientPage({ invoices }: { invoices: DbInvoice[]
   const countPaid    = invoices.filter((i) => i.status === "Paid").length
   const countOpen    = invoices.filter((i) => i.status === "Sent" || i.status === "Draft").length
   const countOverdue = invoices.filter((i) => i.status === "Overdue").length
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-6 py-4">
+          <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+          <FileText className="size-4 text-muted-foreground" />
+          <h1 className="text-lg font-semibold text-foreground">Invoices</h1>
+          <div className="ml-auto">
+            <Skeleton className="h-8 w-28" />
+          </div>
+        </header>
+        <div className="p-6 space-y-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="rounded-xl border bg-card p-5 space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            ))}
+          </div>
+          <Skeleton className="h-10 w-full max-w-sm" />
+          <div className="rounded-xl border bg-card overflow-hidden divide-y">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <Skeleton className="size-9 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="h-6 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

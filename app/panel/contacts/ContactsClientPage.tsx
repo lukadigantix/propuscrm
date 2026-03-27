@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Users, AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
 import { HeaderActionButton } from "@/components/header-action-button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -86,12 +88,24 @@ function initials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
 }
 
-export default function ContactsClientPage({ dbContacts }: { dbContacts: DbContact[] }) {
+export default function ContactsClientPage() {
   const router = useRouter()
   const [search, setSearch]       = useState("")
   const [subFilter, setSubFilter] = useState<SubBucket | "All">("All")
   const [page, setPage]           = useState(1)
   const PAGE_SIZE = 10
+
+  const { data: dbContacts = [], isLoading } = useQuery<DbContact[]>({
+    queryKey: ["contacts"],
+    queryFn: async () => {
+      console.log("[ContactsClientPage] fetching /api/contacts...")
+      const res = await fetch("/api/contacts")
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      console.log(`[ContactsClientPage] loaded ${data.length} contacts`)
+      return data
+    },
+  })
 
   const filteredDb = useMemo(() => {
     const q = search.toLowerCase()
@@ -121,6 +135,21 @@ export default function ContactsClientPage({ dbContacts }: { dbContacts: DbConta
       </header>
 
       <div className="flex flex-col gap-6 p-6">
+
+        {/* Skeleton while loading */}
+        {isLoading && (
+          <div className="rounded-xl border overflow-hidden bg-card">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-5 px-5 py-3.5 border-b last:border-0">
+                <Skeleton className="size-8 rounded-full shrink-0" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-4 w-24 hidden sm:block" />
+                <Skeleton className="h-4 w-40 hidden md:block flex-1" />
+                <Skeleton className="h-4 w-28 hidden md:block" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Search + Filters */}
         <div className="flex flex-col gap-3">
